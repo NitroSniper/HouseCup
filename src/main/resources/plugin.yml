@@ -1,0 +1,6 @@
+name: HouseCup
+version: '${version}'
+
+main: dev.ortin.houseCup.HouseCup
+api-version: '1.21.11'
+load: POSTWORLD
