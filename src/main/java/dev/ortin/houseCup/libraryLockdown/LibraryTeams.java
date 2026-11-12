@@ -67,10 +67,10 @@ class LibraryTeamsArgument implements CustomArgumentType.Converted<LibraryTeams,
     @Override
     public <S> @NonNull CompletableFuture<Suggestions> listSuggestions(final @NonNull CommandContext<S> context, final @NonNull SuggestionsBuilder builder) {
         for (final LibraryTeams team : LibraryTeams.values()) {
-            final String name = team.toString();
+            final String name = team.toString().toLowerCase(Locale.ROOT);
 
             // Only suggest if the flavor name matches the user input
-            if (name.startsWith(builder.getRemainingLowerCase())) {
+            if (name.startsWith(builder.getRemaining())) {
                 builder.suggest(name);
             }
         }
