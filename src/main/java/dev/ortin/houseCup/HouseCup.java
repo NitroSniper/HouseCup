@@ -4,6 +4,8 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.event.player.PlayerInsertLecternBookEvent;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.NamespacedKey;
@@ -28,7 +30,7 @@ class HCTeamDatatype implements PersistentDataType<Byte, HouseCupsTeams> {
 
     @Override
     public @NotNull Class<Byte> getPrimitiveType() {
-        return byte.class;
+        return Byte.class;
     }
 
     @Override
@@ -97,7 +99,6 @@ public final class HouseCup extends JavaPlugin {
         LiteralCommandNode<CommandSourceStack> buildCommand = Commands.literal("house_cup")
                 .then(Commands.literal("message")
                         .executes(context -> {
-
                             CommandSender sender = context.getSource().getSender(); // Retrieve the sender of the command
 
                             sender.sendPlainMessage(this.message + ": Done");
@@ -105,6 +106,24 @@ public final class HouseCup extends JavaPlugin {
                             return Command.SINGLE_SUCCESS;
                         })
                 )
+                .then(Commands.literal("team_add")
+                        .then(Commands.argument("target_player", ArgumentTypes.player())
+                                .executes(context -> {
+
+                                    NamespacedKey key = new NamespacedKey(this, "house_cup_team");
+
+                                    // Get player Argument
+                                    // https://docs.papermc.io/paper/dev/command-api/arguments/entity-player/#player-argument
+                                    Player player = context.getArgument("target_player", PlayerSelectorArgumentResolver.class).resolve(context.getSource()).getFirst();
+
+                                    PersistentDataContainer pdc = player.getPersistentDataContainer();
+                                    pdc.set(key, HCTeamDatatype.INSTANCE, HouseCupsTeams.BLUE);
+
+                                    return Command.SINGLE_SUCCESS;
+                                })
+                        )
+                )
+
                 .build();
 
 
