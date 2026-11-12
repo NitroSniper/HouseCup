@@ -1,10 +1,19 @@
 package dev.ortin.houseCup;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.LiteralMessage;
+import com.mojang.brigadier.arguments.ArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.CustomArgumentType;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.event.player.PlayerInsertLecternBookEvent;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -20,12 +29,47 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 
+import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
+
+
+class HCTeamArgument implements CustomArgumentType.Converted<HouseCupsTeams, String> {
+    private static final DynamicCommandExceptionType ERROR_INVALID_TEAM = new DynamicCommandExceptionType(team -> new LiteralMessage(team + " is not a valid team!"));
+
+    @Override
+    public @NonNull HouseCupsTeams convert(final String nativeType) throws CommandSyntaxException {
+        try {
+            return HouseCupsTeams.valueOf(nativeType.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw ERROR_INVALID_TEAM.create(nativeType);
+        }
+    }
+
+    @Override
+    public <S> @NonNull CompletableFuture<Suggestions> listSuggestions(final @NonNull CommandContext<S> context, final @NonNull SuggestionsBuilder builder) {
+        for (final HouseCupsTeams team : HouseCupsTeams.values()) {
+            final String name = team.toString();
+
+            // Only suggest if the flavor name matches the user input
+            if (name.startsWith(builder.getRemainingLowerCase())) {
+                builder.suggest(name);
+            }
+        }
+
+        return builder.buildFuture();
+    }
+
+    @Override
+    public @NonNull ArgumentType<String> getNativeType() {
+        return StringArgumentType.word();
+    }
+}
+
 
 class HCTeamDatatype implements PersistentDataType<Byte, HouseCupsTeams> {
-    public static final HCTeamDatatype INSTANCE = new HCTeamDatatype();
 
     // Singleton so don't need many objects so constructor is unneeded
-    private HCTeamDatatype() {}
+    HCTeamDatatype() {}
 
 
     @Override
@@ -79,7 +123,7 @@ class ExampleListener implements Listener {
 
         NamespacedKey key = new NamespacedKey(this.plugin, "house_cup_team");
 
-        HouseCupsTeams team = pdc.getOrDefault(key, HCTeamDatatype.INSTANCE, HouseCupsTeams.NULL);
+        HouseCupsTeams team = pdc.getOrDefault(key, new HCTeamDatatype(), HouseCupsTeams.NULL);
 
         player.sendPlainMessage("You are in team " + team);
     }
@@ -108,19 +152,22 @@ public final class HouseCup extends JavaPlugin {
                 )
                 .then(Commands.literal("team_add")
                         .then(Commands.argument("target_player", ArgumentTypes.player())
-                                .executes(context -> {
+                                .then(Commands.argument("target_team", new HCTeamArgument())
+                                    .executes(context -> {
+                                        // Get player Argument
+                                        // https://docs.papermc.io/paper/dev/command-api/arguments/entity-player/#player-argument
+                                        Player player = context.getArgument("target_player", PlayerSelectorArgumentResolver.class).resolve(context.getSource()).getFirst();
+                                        HouseCupsTeams team = context.getArgument("target_team", HouseCupsTeams.class);
 
-                                    NamespacedKey key = new NamespacedKey(this, "house_cup_team");
+                                        NamespacedKey key = new NamespacedKey(this, "house_cup_team");
 
-                                    // Get player Argument
-                                    // https://docs.papermc.io/paper/dev/command-api/arguments/entity-player/#player-argument
-                                    Player player = context.getArgument("target_player", PlayerSelectorArgumentResolver.class).resolve(context.getSource()).getFirst();
 
-                                    PersistentDataContainer pdc = player.getPersistentDataContainer();
-                                    pdc.set(key, HCTeamDatatype.INSTANCE, HouseCupsTeams.BLUE);
+                                        PersistentDataContainer pdc = player.getPersistentDataContainer();
+                                        pdc.set(key, new HCTeamDatatype(), team);
 
-                                    return Command.SINGLE_SUCCESS;
-                                })
+                                        return Command.SINGLE_SUCCESS;
+                                    })
+                                )
                         )
                 )
 
