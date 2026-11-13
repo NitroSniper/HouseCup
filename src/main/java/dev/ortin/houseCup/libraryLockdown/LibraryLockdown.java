@@ -37,7 +37,7 @@ class LibraryListener implements Listener {
 
         PersistentDataContainer pdc = player.getPersistentDataContainer();
 
-        NamespacedKey key = new NamespacedKey(this.plugin, "house_cup_team");
+        NamespacedKey key = new NamespacedKey(this.plugin, LibraryLockdownPDCKey.TEAM.label);
 
         LibraryTeams team = pdc.getOrDefault(key, new LibraryTeamsDatatype(), LibraryTeams.NULL);
 
@@ -45,6 +45,16 @@ class LibraryListener implements Listener {
     }
 }
 
+
+enum LibraryLockdownPDCKey {
+    TEAM("team");
+
+    public final String label;
+
+    LibraryLockdownPDCKey(String label) {
+        this.label = label;
+    }
+}
 
 
 public final class LibraryLockdown extends JavaPlugin {
@@ -74,7 +84,7 @@ public final class LibraryLockdown extends JavaPlugin {
                                         Player player = context.getArgument("target_player", PlayerSelectorArgumentResolver.class).resolve(context.getSource()).getFirst();
                                         LibraryTeams team = context.getArgument("target_team", LibraryTeams.class);
 
-                                        NamespacedKey key = new NamespacedKey(this, "house_cup_team");
+                                        NamespacedKey key = new NamespacedKey(this, LibraryLockdownPDCKey.TEAM.label);
 
 
                                         PersistentDataContainer pdc = player.getPersistentDataContainer();
