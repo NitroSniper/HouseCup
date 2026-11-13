@@ -65,7 +65,8 @@ public final class LibraryLockdown extends JavaPlugin {
     public void onEnable() {
         // Plugin startup logic
 
-        LiteralCommandNode<CommandSourceStack> buildCommand = Commands.literal("house_cup")
+        LiteralCommandNode<CommandSourceStack> buildCommand = Commands.literal(this.namespace())
+                .requires(source -> source.getSender().isOp())
                 .then(Commands.literal("message")
                         .executes(context -> {
                             CommandSender sender = context.getSource().getSender(); // Retrieve the sender of the command
