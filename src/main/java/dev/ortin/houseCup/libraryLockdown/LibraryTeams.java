@@ -34,7 +34,8 @@ enum LibraryTeams {
 class LibraryTeamsDatatype implements PersistentDataType<String, LibraryTeams> {
 
     // Singleton so don't need many objects so constructor is unneeded
-    LibraryTeamsDatatype() {}
+    LibraryTeamsDatatype() {
+    }
 
 
     @Override

@@ -30,6 +30,16 @@ import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.TextColor.color;
 
 
+enum LibraryLockdownPDCKey {
+    TEAM("team");
+
+    public final String label;
+
+    LibraryLockdownPDCKey(String label) {
+        this.label = label;
+    }
+}
+
 class LibraryListener implements Listener {
 
 
@@ -38,7 +48,7 @@ class LibraryListener implements Listener {
     LibraryListener(JavaPlugin plugin) {
         this.plugin = plugin;
     }
-    
+
     @EventHandler
     public void onPlayerInsertLecternBook(PlayerInsertLecternBookEvent event) {
         @NotNull Player player = event.getPlayer();
@@ -57,20 +67,7 @@ class LibraryListener implements Listener {
     }
 }
 
-
-enum LibraryLockdownPDCKey {
-    TEAM("team");
-
-    public final String label;
-
-    LibraryLockdownPDCKey(String label) {
-        this.label = label;
-    }
-}
-
-
 public final class LibraryLockdown extends JavaPlugin {
-
 
 
     @Override
@@ -114,26 +111,25 @@ public final class LibraryLockdown extends JavaPlugin {
                 .then(Commands.literal("team_add")
                         .then(Commands.argument("target_player", ArgumentTypes.player())
                                 .then(Commands.argument("target_team", new LibraryTeamsArgument())
-                                    .executes(context -> {
-                                        // Get player Argument
-                                        // https://docs.papermc.io/paper/dev/command-api/arguments/entity-player/#player-argument
-                                        Player player = context.getArgument("target_player", PlayerSelectorArgumentResolver.class).resolve(context.getSource()).getFirst();
-                                        LibraryTeams team = context.getArgument("target_team", LibraryTeams.class);
+                                        .executes(context -> {
+                                            // Get player Argument
+                                            // https://docs.papermc.io/paper/dev/command-api/arguments/entity-player/#player-argument
+                                            Player player = context.getArgument("target_player", PlayerSelectorArgumentResolver.class).resolve(context.getSource()).getFirst();
+                                            LibraryTeams team = context.getArgument("target_team", LibraryTeams.class);
 
-                                        NamespacedKey key = new NamespacedKey(this, LibraryLockdownPDCKey.TEAM.label);
+                                            NamespacedKey key = new NamespacedKey(this, LibraryLockdownPDCKey.TEAM.label);
 
 
-                                        PersistentDataContainer pdc = player.getPersistentDataContainer();
-                                        pdc.set(key, new LibraryTeamsDatatype(), team);
+                                            PersistentDataContainer pdc = player.getPersistentDataContainer();
+                                            pdc.set(key, new LibraryTeamsDatatype(), team);
 
-                                        return Command.SINGLE_SUCCESS;
-                                    })
+                                            return Command.SINGLE_SUCCESS;
+                                        })
                                 )
                         )
                 )
 
                 .build();
-
 
 
         // Register Events
