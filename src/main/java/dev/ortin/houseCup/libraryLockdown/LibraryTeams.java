@@ -18,11 +18,17 @@ import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 
 enum LibraryTeams {
-    BLUE,
-    RED,
-    GREEN,
-    YELLOW,
-    NULL
+    BLUE(0x048ede),
+    RED(0xa10b00),
+    GREEN(0x02ab0a),
+    YELLOW(0xebeb07),
+    NONE(0x878787);
+
+    public final int color;
+
+    LibraryTeams(int color_code) {
+        this.color = color_code;
+    }
 }
 
 class LibraryTeamsDatatype implements PersistentDataType<String, LibraryTeams> {

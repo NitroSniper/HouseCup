@@ -7,8 +7,13 @@ import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.event.player.PlayerInsertLecternBookEvent;
+import io.papermc.paper.persistence.PersistentDataContainerView;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -16,6 +21,13 @@ import org.bukkit.event.Listener;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Arrays;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.format.TextColor.color;
 
 
 class LibraryListener implements Listener {
@@ -39,7 +51,7 @@ class LibraryListener implements Listener {
 
         NamespacedKey key = new NamespacedKey(this.plugin, LibraryLockdownPDCKey.TEAM.label);
 
-        LibraryTeams team = pdc.getOrDefault(key, new LibraryTeamsDatatype(), LibraryTeams.NULL);
+        LibraryTeams team = pdc.getOrDefault(key, new LibraryTeamsDatatype(), LibraryTeams.NONE);
 
         player.sendPlainMessage("You are in team " + team);
     }
@@ -59,7 +71,7 @@ enum LibraryLockdownPDCKey {
 
 public final class LibraryLockdown extends JavaPlugin {
 
-    String message = "Hello World!";
+
 
     @Override
     public void onEnable() {
@@ -67,12 +79,35 @@ public final class LibraryLockdown extends JavaPlugin {
 
         LiteralCommandNode<CommandSourceStack> buildCommand = Commands.literal(this.namespace())
                 .requires(source -> source.getSender().isOp())
-                .then(Commands.literal("message")
+                .then(Commands.literal("info")
                         .executes(context -> {
                             CommandSender sender = context.getSource().getSender(); // Retrieve the sender of the command
+                            NamespacedKey key = new NamespacedKey(this, LibraryLockdownPDCKey.TEAM.label);
+                            OfflinePlayer[] allPlayers = Bukkit.getServer().getOfflinePlayers();
 
-                            sender.sendPlainMessage(this.message + ": Done");
+                            final Component info = text("Teams:")
+                                    .appendNewline()
+                                    .append(
+                                            Arrays.stream(LibraryTeams.values())
+                                                    .map(team -> {
+                                                        TextColor team_color = color(team.color);
 
+                                                        Stream<OfflinePlayer> team_players = Arrays.stream(allPlayers).filter(
+                                                                offlinePlayer -> {
+                                                                    PersistentDataContainerView pdc = offlinePlayer.getPersistentDataContainer();
+                                                                    return pdc.getOrDefault(key, new LibraryTeamsDatatype(), LibraryTeams.NONE) == team;
+                                                                }
+                                                        );
+                                                        return text()
+                                                                .append(text(team.name(), team_color))
+                                                                .append(text(" Team: ", team_color))
+                                                                .append(text(team_players.map(OfflinePlayer::getName).collect(Collectors.joining(", "))))
+                                                                .build();
+                                                    })
+                                                    .reduce((a, b) -> a.append(Component.newline()).append(b))
+                                                    .orElseThrow()
+                                    );
+                            sender.sendMessage(info);
                             return Command.SINGLE_SUCCESS;
                         })
                 )
